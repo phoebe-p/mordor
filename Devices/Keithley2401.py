@@ -1,7 +1,7 @@
 __author__ = 'D. Alonso-Álvarez and M. P. Nielsen'
 
 import numpy as np
-import 
+import pyvisa as visa
 import time
 from tkinter import messagebox
 

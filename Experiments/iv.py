@@ -55,7 +55,7 @@ class IV:
         # Hardware variables
         self.smu = None
 
-        # Adquisition variables
+        # Aquisition variables
         self.integration_time = 300
         self.delay = 100
         self.stop = True

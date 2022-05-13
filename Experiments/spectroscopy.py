@@ -45,8 +45,8 @@ class Spectroscopy:
 
         if self.monochromator is not None:
             self.dm.close_device(self.monochromator)
-        if self.adquisition is not None:
-            self.dm.close_device(self.adquisition)
+        if self.aquisition is not None:
+            self.dm.close_device(self.aquisition)
 
         self.batch.quit()
 
@@ -58,9 +58,9 @@ class Spectroscopy:
 
         # Hardware variables
         self.monochromator = None
-        self.adquisition = None
+        self.aquisition = None
 
-        # Adquisition variables
+        # Aquisition variables
         self.integration_time = 300
         self.waiting_time = 100
         self.stop = True
@@ -83,13 +83,13 @@ class Spectroscopy:
         self.mono_var = tk.StringVar()
         self.adq_var = tk.StringVar()
         self.monochromator_box = ttk.Combobox(master=hardware_frame, textvariable=self.mono_var, state="readonly")
-        self.adquisition_box = ttk.Combobox(master=hardware_frame, textvariable=self.adq_var, state="readonly")
+        self.aquisition_box = ttk.Combobox(master=hardware_frame, textvariable=self.adq_var, state="readonly")
 
         self.monochromator_box.bind('<<ComboboxSelected>>', self.select_monochromator)
-        self.adquisition_box.bind('<<ComboboxSelected>>', self.select_adquisition)
+        self.aquisition_box.bind('<<ComboboxSelected>>', self.select_aquisition)
 
         self.monochromator_box.grid(column=0, row=0, sticky=(tk.EW))
-        self.adquisition_box.grid(column=0, row=1, sticky=(tk.EW))
+        self.aquisition_box.grid(column=0, row=1, sticky=(tk.EW))
 
         # Set widgets ---------------------------------
         set_frame = ttk.Labelframe(self.spectroscopy_frame, text='Set:', padding=(0, 5, 0, 15))
@@ -115,7 +115,7 @@ class Spectroscopy:
         self.waiting_time_button.grid(column=0, row=3, sticky=(tk.EW))
         self.waiting_time_entry.grid(column=1, row=3, sticky=(tk.EW))
 
-        # Live adquisition widgets
+        # Live aquisition widgets
         live_frame = ttk.Labelframe(self.spectroscopy_frame, text='Live:', padding=(0, 5, 0, 15))
         live_frame.columnconfigure(1, weight=1)
         live_frame.columnconfigure(2, weight=1)
@@ -180,8 +180,8 @@ class Spectroscopy:
         # Hardware menu
         self.master.menu_hardware.add_command(label='Monochromator', command=lambda: self.monochromator.interface(self.master))
         self.master.menu_hardware.entryconfig("Monochromator", state="disabled")
-        self.master.menu_hardware.add_command(label='Adquisition', command=lambda: self.adquisition.interface(self.master))
-        self.master.menu_hardware.entryconfig("Adquisition", state="disabled")
+        self.master.menu_hardware.add_command(label='Aquisition', command=lambda: self.aquisition.interface(self.master))
+        self.master.menu_hardware.entryconfig("Aquisition", state="disabled")
 
         # Batch menu
         self.master.menu_batch.add_command(label='Disable', command=self.batch.disable)
@@ -210,11 +210,11 @@ class Spectroscopy:
 
         self.monochromator_box['values'] = self.dm.get_devices(['Monochromator'])
         self.monochromator_box.current(0)
-        self.adquisition_box['values'] = self.dm.get_devices(['Lock-In', 'Spectrometer'])
-        self.adquisition_box.current(0)
+        self.aquisition_box['values'] = self.dm.get_devices(['Lock-In', 'Spectrometer'])
+        self.aquisition_box.current(0)
 
         self.select_monochromator()
-        self.select_adquisition()
+        self.select_aquisition()
 
     def select_monochromator(self, *args):
 
@@ -242,23 +242,23 @@ class Spectroscopy:
         else:
             self.master.menu_hardware.entryconfig("Monochromator", state="disabled")
 
-    def select_adquisition(self, *args):
-        """ When the adquisition selector changes, this function updates some variables and the graphical interface
+    def select_aquisition(self, *args):
+        """ When the aquisition selector changes, this function updates some variables and the graphical interface
         to adapt it to the selected device.
 
         :param args: Dummy variable that does nothing but must exist (?)
         :return: None
         """
 
-        if self.adquisition is not None:
-            self.dm.close_device(self.adquisition)
+        if self.aquisition is not None:
+            self.dm.close_device(self.aquisition)
 
         dev_name = self.adq_var.get()
-        self.adquisition = self.dm.open_device(dev_name)
+        self.aquisition = self.dm.open_device(dev_name)
 
-        if self.adquisition is None:
-            self.adquisition_box.current(0)
-            self.adquisition = self.dm.open_device(self.adq_var.get())
+        if self.aquisition is None:
+            self.aquisition_box.current(0)
+            self.aquisition = self.dm.open_device(self.adq_var.get())
 
         elif self.dm.current_config[dev_name]['Type'] == 'Spectrometer':
             self.move = self.null
@@ -289,14 +289,14 @@ class Spectroscopy:
             self.GoTo_entry['state'] = 'normal'
 
         else:
-            self.adquisition_box.current(0)
-            self.adquisition = self.dm.open_device(self.adq_var.get())
+            self.aquisition_box.current(0)
+            self.aquisition = self.dm.open_device(self.adq_var.get())
 
-        interface = getattr(self.adquisition, "interface", None)
+        interface = getattr(self.aquisition, "interface", None)
         if callable(interface):
-            self.master.menu_hardware.entryconfig("Adquisition", state="normal")
+            self.master.menu_hardware.entryconfig("Aquisition", state="normal")
         else:
-            self.master.menu_hardware.entryconfig("Adquisition", state="disabled")
+            self.master.menu_hardware.entryconfig("Aquisition", state="disabled")
 
     def null(self, *args, **kwargs):
         """ Empty function that does nothing
@@ -317,7 +317,7 @@ class Spectroscopy:
             self.finish_scan()
 
     def pause_scan(self):
-        """ Pauses an scan or resumes the adquisition
+        """ Pauses an scan or resumes the aquisition
 
         :return: None
         """
@@ -344,7 +344,7 @@ class Spectroscopy:
         # Get the scan conditions
         self.start_wl = max(float(self.Start_entry.get()), 250)
         self.stop_wl = max(min(float(self.Stop_entry.get()), 3000), self.start_wl + 1)
-        step = min(max(float(self.Step_entry.get()), self.adquisition.min_wavelength), self.stop_wl - self.start_wl)
+        step = min(max(float(self.Step_entry.get()), self.aquisition.min_wavelength), self.stop_wl - self.start_wl)
 
         # # If we are in a batch, we proceed to the next point
         if self.batch.ready:
@@ -370,13 +370,13 @@ class Spectroscopy:
         self.mode_lockin()
 
     def mode_lockin(self):
-        """ Gets the next data point in a scan. This function depends on the adquisition device
+        """ Gets the next data point in a scan. This function depends on the aquisition device
 
         :return: None
         """
 
         if not self.stop:
-            data = self.adquisition.measure()
+            data = self.aquisition.measure()
             self.record[self.i, 1] = data[0]
             self.record[self.i, 2] = data[1]
 
@@ -413,15 +413,15 @@ class Spectroscopy:
         if self.batch.ready:
             self.batch.batch_proceed()
 
-        # If the integration time is too long, we have to split the adquisition in several steps,
+        # If the integration time is too long, we have to split the aquisition in several steps,
         # otherwise the spectrometer hangs
-        self.num = int(np.ceil(self.integration_time / self.adquisition.max_integration_time))
+        self.num = int(np.ceil(self.integration_time / self.aquisition.max_integration_time))
 
         # Here we select the wavelength range we want to record and re-shape the record array
         # Get the scan conditions
         self.start_wl = max(float(self.Start_entry.get()), 300)
         self.stop_wl = max(min(float(self.Stop_entry.get()), 2000), self.start_wl + 1)
-        wl = self.adquisition.measure()[0]
+        wl = self.aquisition.measure()[0]
         self.idx = np.where((self.start_wl <= wl) & (wl <= self.stop_wl))
         self.size = len(self.idx[0])
 
@@ -445,7 +445,7 @@ class Spectroscopy:
         """
 
         if not self.stop:
-            data = self.adquisition.measure()
+            data = self.aquisition.measure()
             intensity = data[1][self.idx] - self.background[self.idx]
             self.record[:, 1] = (intensity + self.i * self.record[:, 1]) / (self.i + 1.)
 
@@ -519,10 +519,10 @@ class Spectroscopy:
 
         if meas_bg:
             self.update_integration_time()
-            self.background = self.adquisition.measure()[1]
+            self.background = self.aquisition.measure()[1]
             messagebox.showinfo(message='Background taken!', detail='Press OK to continue.', title='Background taken!')
         else:
-            self.background = self.adquisition.measure()[1]*0.0
+            self.background = self.aquisition.measure()[1]*0.0
 
     def clear_background(self):
         """ Clears the background when using the spectrometer.
@@ -554,7 +554,7 @@ class Spectroscopy:
             self.finish_live()
 
     def pause_live(self):
-        """ Pauses a live recording or resumes the adquisition
+        """ Pauses a live recording or resumes the aquisition
         """
         self.stop = not self.stop
 
@@ -566,7 +566,7 @@ class Spectroscopy:
         self.live()
 
     def prepare_live_lockin(self):
-        """ Prepares the lock-in live adquisition and prepare some variables
+        """ Prepares the lock-in live aquisition and prepare some variables
         """
         self.goto()
         self.update_integration_time()
@@ -583,28 +583,28 @@ class Spectroscopy:
         self.live_lockin()
 
     def live_lockin(self):
-        """ Runs the live lock-in adquisition
+        """ Runs the live lock-in aquisition
         """
         if not self.stop:
             self.live_data[:-1, 1] = self.live_data[1:, 1]
             self.live_data[:-1, 2] = self.live_data[1:, 2]
 
-            self.live_data[-1, 1], self.live_data[-1, 2] = self.adquisition.measure()
+            self.live_data[-1, 1], self.live_data[-1, 2] = self.aquisition.measure()
 
             self.master.update_plot(self.live_data)
 
             self.master.window.after(self.integration_time, self.live_lockin)
 
     def prepare_live_spectrometer(self):
-        """ Prepares the spectrometer live adquisition and prepare some variables
+        """ Prepares the spectrometer live aquisition and prepare some variables
         """
         self.update_integration_time()
 
-        if self.integration_time > self.adquisition.max_integration_time:
-            self.integration_time = int(self.adquisition.max_integration_time)
-            self.adquisition.update_integration_time(self.integration_time)
+        if self.integration_time > self.aquisition.max_integration_time:
+            self.integration_time = int(self.aquisition.max_integration_time)
+            self.aquisition.update_integration_time(self.integration_time)
 
-        data0, data1 = self.adquisition.measure()
+        data0, data1 = self.aquisition.measure()
 
         self.live_data = np.zeros((len(data0), 3))
         self.live_data[:, 0] = data0
@@ -617,10 +617,10 @@ class Spectroscopy:
         self.live_spectrometer()
 
     def live_spectrometer(self):
-        """ Runs the live spectrometer adquisition
+        """ Runs the live spectrometer aquisition
         """
         if not self.stop:
-            data0, data1 = self.adquisition.measure()
+            data0, data1 = self.aquisition.measure()
             self.live_data[:, 1] = data1
 
             self.master.update_plot(self.live_data)
@@ -628,7 +628,7 @@ class Spectroscopy:
             self.master.window.after(self.integration_time, self.live_spectrometer)
 
     def finish_live(self):
-        """ Finish the live adquisition, returning the front end to the scan mode
+        """ Finish the live aquisition, returning the front end to the scan mode
         """
         self.master.replot_data(xtitle='Wavelength (nm)', ticks='on')
 
@@ -640,7 +640,7 @@ class Spectroscopy:
 
         if old_integration_time != self.integration_time:
             self.clear_background()
-            self.integration_time = self.adquisition.update_integration_time(self.integration_time)
+            self.integration_time = self.aquisition.update_integration_time(self.integration_time)
             self.integration_time_entry.delete(0, tk.END)
             self.integration_time_entry.insert(0, '%i' % self.integration_time)
 

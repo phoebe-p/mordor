@@ -48,7 +48,7 @@ class Mordor(object):
         # Create the main visual elements
         self.make_front_end()
         self.experiment = experiment(self, self.dm)
-        self.create_plot_area(self.experiment.plot_format)
+        # self.create_plot_area(self.experiment.plot_format)
 
         # Main loop of the program
         tools.center(self.window)

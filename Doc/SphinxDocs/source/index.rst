@@ -3,7 +3,7 @@
 Welcome to Mordor's documentation!
 ==================================
 
-Mordor is a hardware manager and data adquisition software developed at the Quantum Photovoltaics Group (QPV) to simplify the execution of common experiments and the implementation of new ones. It is also designed to be simple to mantain and to expand by any user with some knowledge of Python. The idea is that, if the main developer leaves the group, the software will be easy to maintain and update acording to the group needs and the inevitable upgrades of computers and operative systems.
+Mordor is a hardware manager and data aquisition software developed at the Quantum Photovoltaics Group (QPV) to simplify the execution of common experiments and the implementation of new ones. It is also designed to be simple to mantain and to expand by any user with some knowledge of Python. The idea is that, if the main developer leaves the group, the software will be easy to maintain and update acording to the group needs and the inevitable upgrades of computers and operative systems.
 
 Currently supported features are:
 

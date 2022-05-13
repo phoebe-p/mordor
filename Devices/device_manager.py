@@ -51,7 +51,7 @@ class Devman(tk.Toplevel):
         self.current_config = self.load_last_working_config()
         self.current_config_backup = self.load_last_working_config()
         self.device_types = list(set([self.current_config[dev]['Type'] for dev in self.current_config.sections()]))
-        self.device_conexions = ['Dummy', 'Serial', 'GPIB', 'Auto USB']
+        self.device_connections = ['Dummy', 'Serial', 'GPIB', 'Auto USB']
 
         # List of devices in use
         self.used_devices = []
@@ -98,10 +98,10 @@ class Devman(tk.Toplevel):
 
         device_info = self.current_config[dev_name]
 
-        if device_info['Conexion'] is not 'Dummy':
+        if device_info['Connection'] != 'Dummy':
             if dev_name in self.used_devices:
                 messagebox.showinfo(message='Device {} is being used by other experiment.'.format(dev_name),
-                                    detail='Close that device and try again.', title='Device ocupied!!')
+                                    detail='Close that device and try again.', title='Device occupied!')
                 return None
 
         dev2open = '.' + device_info['Module']
@@ -112,6 +112,7 @@ class Devman(tk.Toplevel):
             new = dev.New(port, dev_name, device_info)
             self.used_devices.append(dev_name)
             return new
+
         except (OSError, ImportError) as err:
             print("ERROR: {0}\tDevice {1} could not be open.\n".format(err, device_info['Module']))
             return None
@@ -137,12 +138,12 @@ class Devman(tk.Toplevel):
         device_info = self.current_config[dev_name]
 
         # 'Dummies' are always OK. The port selected is ignored.
-        if device_info['Conexion'] == 'Dummy':
+        if device_info['Connection'] == 'Dummy':
             return 0
 
         # 'Auto USB' devices are tested simply by checking if, given the configuration, they can be open.
         # Depending on the device, the port might be important
-        elif device_info['Conexion'] == 'Auto USB':
+        elif device_info['Connection'] == 'Auto USB':
             try:
                 dev = self.open_device(dev_name)
                 if dev_name == dev.info['Name']:
@@ -159,7 +160,7 @@ class Devman(tk.Toplevel):
                 return -1
 
         # 'Serial' devices need to be checked by asking a question to the port and checking if the answer is correct.
-        elif (device_info['Conexion'] == 'Serial'):
+        elif (device_info['Connection'] == 'Serial'):
             try:
                 device = serial.Serial(port, timeout=10)
                 device.write(bytes(device_info['Question/SN'] + '\r', 'UTF-8'))
@@ -178,7 +179,7 @@ class Devman(tk.Toplevel):
         # We are using a VISA connection that have to be checked on its own, as long as VISA is working
         # VISA devices need to be checked by asking a question to the port and checking if the answer is correct,
         # similar to serial ports.
-        elif (device_info['Conexion']  == 'GPIB') and is_visa:
+        elif (device_info['Connection']  == 'GPIB') and is_visa:
             try:
                 device = rm.open_resource(port)
                 answer = device.query(device_info['Question/SN'])
@@ -265,7 +266,7 @@ class Devman(tk.Toplevel):
         ttk.Label(info_frame, text='Name:', width=10).grid(column=2, row=0, sticky=(tk.W, tk.S))
         ttk.Label(info_frame, text='Module:', width=10).grid(column=2, row=1, sticky=(tk.W, tk.S))
         ttk.Label(info_frame, text='Type:', width=10).grid(column=2, row=2, sticky=(tk.W, tk.S))
-        ttk.Label(info_frame, text='Conexion:', width=10).grid(column=2, row=3, sticky=(tk.W, tk.S))
+        ttk.Label(info_frame, text='Connection:', width=10).grid(column=2, row=3, sticky=(tk.W, tk.S))
         ttk.Label(info_frame, text='Question/SN:', width=10).grid(column=2, row=4, sticky=(tk.W, tk.S))
         ttk.Label(info_frame, text='Answer:', width=10).grid(column=2, row=5, sticky=(tk.W, tk.S))
         ttk.Label(info_frame, text='Port:', width=10).grid(column=2, row=6, sticky=(tk.W, tk.S))
@@ -273,7 +274,7 @@ class Devman(tk.Toplevel):
         self.name_var = tk.StringVar()
         self.module_var = tk.StringVar()
         self.type_var = tk.StringVar()
-        self.conexion_var = tk.StringVar()
+        self.connection_var = tk.StringVar()
         self.question_var = tk.StringVar()
         self.answer_var = tk.StringVar()
         self.port_var = tk.StringVar()
@@ -289,9 +290,9 @@ class Devman(tk.Toplevel):
         self.type_entry.grid(column=3, row=2, sticky=tk.NSEW)
         self.type_entry['values'] = self.device_types
 
-        self.conexion_entry = ttk.Combobox(info_frame, width=18, textvariable=self.conexion_var)
-        self.conexion_entry.grid(column=3, row=3, sticky=tk.NSEW)
-        self.conexion_entry['values'] = self.device_conexions
+        self.connection_entry = ttk.Combobox(info_frame, width=18, textvariable=self.connection_var)
+        self.connection_entry.grid(column=3, row=3, sticky=tk.NSEW)
+        self.connection_entry['values'] = self.device_connections
 
         self.port_entry = ttk.Combobox(info_frame, width=18, textvariable=self.port_var)
         self.port_entry.grid(column=3, row=6, sticky=tk.NSEW)
@@ -314,14 +315,14 @@ class Devman(tk.Toplevel):
 
         self.current_config['New device']['Module'] = 'None'
         self.current_config['New device']['Type'] = 'Monochromator'
-        self.current_config['New device']['Conexion'] = 'Dummy'
+        self.current_config['New device']['Connection'] = 'Dummy'
         self.current_config['New device']['Question/SN'] = 'None'
         self.current_config['New device']['Answer'] = 'None'
         self.current_config['New device']['Port'] = 'None'
 
         self.module_var.set('None')
         self.type_var.set('Monochromator')
-        self.conexion_var.set('Dummy')
+        self.connection_var.set('Dummy')
         self.question_var.set('None')
         self.answer_var.set('None')
         self.port_var.set('None')
@@ -410,13 +411,13 @@ class Devman(tk.Toplevel):
         self.name_var.set(self.current_config.sections()[self.dev_selected])
         self.module_var.set(dev['Module'])
         self.type_var.set(dev['Type'])
-        self.conexion_var.set(dev['Conexion'])
+        self.connection_var.set(dev['Connection'])
         self.question_var.set(dev['Question/SN'])
         self.answer_var.set(dev['Answer'])
         self.port_var.set(dev['Port'])
 
         if dev['Port'] not in self.port_entry['values']:
-            self.info_lbl['text'] = 'WARNING: Default port for this device is not available. Check conexions and re-scan the ports.'
+            self.info_lbl['text'] = 'WARNING: Default port for this device is not available. Check connections and re-scan the ports.'
         else:
             self.info_lbl['text'] = ''
 
@@ -443,7 +444,7 @@ class Devman(tk.Toplevel):
         if out == 0:
             self.current_config[dev_name]['Module'] = self.module_var.get()
             self.current_config[dev_name]['Type'] = self.type_var.get()
-            self.current_config[dev_name]['Conexion'] = self.conexion_var.get()
+            self.current_config[dev_name]['Connection'] = self.connection_var.get()
             self.current_config[dev_name]['Question/SN'] = self.question_var.get()
             self.current_config[dev_name]['Answer'] = self.answer_var.get()
             self.current_config[dev_name]['Port'] = port

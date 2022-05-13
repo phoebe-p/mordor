@@ -59,7 +59,7 @@ class HR4000:
         return wl[i:k], intensities[i:k]*1000.0/self.integration_time
 
     def close(self):
-        """ Closes the conexion to the spectrometer
+        """ Closes the connection to the spectrometer
 
         :return: None
         """

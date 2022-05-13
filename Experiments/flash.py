@@ -37,7 +37,7 @@ class Flash(object):
         self.fill_devices()
 
     def _quit(self):
-        self.dm.close_device(self.adquisition)
+        self.dm.close_device(self.aquisition)
         self.dm.close_device(self.trigger)
         self.window.destroy()
         self.splash.show(minus_experiment=True)
@@ -72,25 +72,25 @@ class Flash(object):
         self.meas_trigger_box.current(13)
 
 
-    def select_adquisition(self, *args):
+    def select_aquisition(self, *args):
 
-        if self.adquisition is not None:
-            self.dm.close_device(self.adquisition)
+        if self.aquisition is not None:
+            self.dm.close_device(self.aquisition)
 
-        dev_name = self.adquisition_var.get()
-        self.adquisition = self.dm.open_device(dev_name)
+        dev_name = self.aquisition_var.get()
+        self.aquisition = self.dm.open_device(dev_name)
 
-        if self.adquisition is None:
-            self.adquisition_box.current(0)
-            self.control = self.dm.open_device(self.adquisition_var.get())
+        if self.aquisition is None:
+            self.aquisition_box.current(0)
+            self.control = self.dm.open_device(self.aquisition_var.get())
 
-        self.ref_channel_box['values'] = self.adquisition.available_channels
+        self.ref_channel_box['values'] = self.aquisition.available_channels
         self.ref_channel_box.current(0)
-        self.I_channel_box['values'] = self.adquisition.available_channels
+        self.I_channel_box['values'] = self.aquisition.available_channels
         self.I_channel_box.current(1)
-        self.V_channel_box['values'] = self.adquisition.available_channels
+        self.V_channel_box['values'] = self.aquisition.available_channels
         self.V_channel_box.current(2)
-        self.oscilloscope_trigger_box['values'] = self.adquisition.available_channels
+        self.oscilloscope_trigger_box['values'] = self.aquisition.available_channels
         self.oscilloscope_trigger_box.current(3)
 
     def run(self, current_shot=1, single=False):
@@ -117,15 +117,15 @@ class Flash(object):
         times = np.linspace(0, tmax, samples)  # µs
 
         # Next we update the configuration of the oscilloscope
-        self.adquisition.set_sampling_rate(rate)
-        self.adquisition.set_number_samples(samples)
-        self.adquisition.set_meas_ready()
+        self.aquisition.set_sampling_rate(rate)
+        self.aquisition.set_number_samples(samples)
+        self.aquisition.set_meas_ready()
 
-        # Everithing is ready, so we trigger the measurement, adding some delay between the trigger of the adquisition and the flash
-        self.adquisition.trigger()
+        # Everithing is ready, so we trigger the measurement, adding some delay between the trigger of the aquisition and the flash
+        self.aquisition.trigger()
         time.sleep(delay)
         self.trigger.pulse(trig_chan, 200)        
-        self.record = self.adquisition.collect_data()
+        self.record = self.aquisition.collect_data()
 
         # Add the time to the experimental data
         self.record = np.hstack((times[:, None], self.record))
@@ -196,11 +196,11 @@ class Flash(object):
         self.select_trigger()
 
         # Oscilloscope
-        self.adquisition_box['values'] = self.dm.get_devices(['Oscilloscope'])
-        self.adquisition_box.current(0)
+        self.aquisition_box['values'] = self.dm.get_devices(['Oscilloscope'])
+        self.aquisition_box.current(0)
 
-        self.adquisition = None
-        self.select_adquisition()
+        self.aquisition = None
+        self.select_aquisition()
 
     def create_menu_bar(self):
         """ Creates the menu bar and the elements within
@@ -277,10 +277,10 @@ class Flash(object):
         self.trigger_box.bind('<<ComboboxSelected>>', self.select_trigger)
         self.trigger_box.grid(column=0, row=0, sticky=(tk.EW))
 
-        self.adquisition_var = tk.StringVar()
-        self.adquisition_box = ttk.Combobox(master=hardware_frame, textvariable=self.adquisition_var, state="readonly")
-        self.adquisition_box.bind('<<ComboboxSelected>>', self.select_adquisition)
-        self.adquisition_box.grid(column=0, row=1, sticky=(tk.EW))
+        self.aquisition_var = tk.StringVar()
+        self.aquisition_box = ttk.Combobox(master=hardware_frame, textvariable=self.aquisition_var, state="readonly")
+        self.aquisition_box.bind('<<ComboboxSelected>>', self.select_aquisition)
+        self.aquisition_box.grid(column=0, row=1, sticky=(tk.EW))
 
         # Reference frame
         reference_frame = ttk.Labelframe(control_frame, text='Reference:', padding=(5, 5, 5, 15))
@@ -376,7 +376,7 @@ class Flash(object):
         self.trig_delay_var.set(100)
 
         ttk.Label(master=run_frame, text="Sampling rate (hz):").grid(column=0, row=2, sticky=tk.EW)
-        ttk.Label(master=run_frame, text="Adquisition time (µs):").grid(column=0, row=3, sticky=tk.EW)
+        ttk.Label(master=run_frame, text="Aquisition time (µs):").grid(column=0, row=3, sticky=tk.EW)
         ttk.Label(master=run_frame, text="Trigger delay (ms):").grid(column=0, row=4, sticky=tk.EW)
 
         ttk.Entry(master=run_frame, width=10, textvariable=self.sampling_rate_var).grid(column=1, row=2, sticky=tk.EW)

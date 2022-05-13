@@ -28,12 +28,12 @@ class EQE:
 
         # Create the interface
         self.create_interface()
-        self.plot_format = {'ratios' : (3, 1),
-                            'xlabel' : 'Wavelength (nm)',
-                            'Ch1_ylabel' : 'Ch-1',
-                            'Ch2_ylabel' : 'Ch-2',
-                            'Ch1_scale' : 'linear',
-                            'Ch2_scale' : 'linear'}
+        # self.plot_format = {'ratios' : (3, 1),
+        #                     'xlabel' : 'Wavelength (nm)',
+        #                     'Ch1_ylabel' : 'Ch-1',
+        #                     'Ch2_ylabel' : 'Ch-2',
+        #                     'Ch1_scale' : 'linear',
+        #                     'Ch2_scale' : 'linear'}
 
         # We load the dummy devices by default
         self.fill_devices()
@@ -43,10 +43,8 @@ class EQE:
         so they are registered as "free".
         """
 
-        if self.monochromator is not None:
-            self.dm.close_device(self.monochromator)
-        if self.adquisition is not None:
-            self.dm.close_device(self.adquisition)
+        if self.daq is not None:
+            self.dm.close_device(self.daq)
 
         self.batch.quit()
 
@@ -57,13 +55,12 @@ class EQE:
         self.background = None
 
         # Hardware variables
-        self.monochromator = None
-        self.adquisition = None
+        self.daq = None
 
-        # Adquisition variables
-        self.integration_time = 300
-        self.waiting_time = 100
-        self.stop = True
+        # Aquisition variables
+        # self.integration_time = 300
+        # self.waiting_time = 100
+        # self.stop = True
 
     def create_interface(self):
 
@@ -80,108 +77,123 @@ class EQE:
         hardware_frame.columnconfigure(0, weight=1)
         hardware_frame.grid(column=0, row=0, sticky=(tk.EW))
 
-        self.mono_var = tk.StringVar()
-        self.adq_var = tk.StringVar()
-        self.monochromator_box = ttk.Combobox(master=hardware_frame, textvariable=self.mono_var, state="readonly")
-        self.adquisition_box = ttk.Combobox(master=hardware_frame, textvariable=self.adq_var, state="readonly")
+        self.daq_var = tk.StringVar()
+        self.daq_box = ttk.Combobox(master=hardware_frame, textvariable=self.daq_var, state="readonly")
+        self.daq_box.bind('<<ComboboxSelected>>', self.select_daq)
+        self.daq_box.grid(column=0, row=0, sticky=(tk.EW))
 
-        self.monochromator_box.bind('<<ComboboxSelected>>', self.select_monochromator)
-        self.adquisition_box.bind('<<ComboboxSelected>>', self.select_adquisition)
+        digi_out_frame = ttk.Labelframe(self.spectroscopy_frame, text='Resistor control (digital out):',
+                                        padding=(0, 5, 0, 15))
+        digi_out_frame.grid(column=0, row=1, sticky=(tk.EW))
+        # digi_out_frame.columnconfigure(1, weight=1)
 
-        self.monochromator_box.grid(column=0, row=0, sticky=(tk.EW))
-        self.adquisition_box.grid(column=0, row=1, sticky=(tk.EW))
+        self.resist_var = tk.IntVar()
+        self.resist_var.set(0)
+        tk.Radiobutton(digi_out_frame, text="None", variable=self.resist_var,
+                       value=0, indicatoron=0, command=self.set_digital_out).grid(column=0, row=0,
+                                                                                  sticky=(tk.E, tk.W, tk.S))
+        tk.Radiobutton(digi_out_frame, text="Resistor 1", variable=self.resist_var,
+                        value=1, indicatoron=0, command=self.set_digital_out).grid(column=0, row=1, sticky=(tk.E, tk.W, tk.S))
+        tk.Radiobutton(digi_out_frame, text="Resistor 2", variable=self.resist_var,
+                        value=2, indicatoron=0, command=self.set_digital_out).grid(column=1, row=1, sticky=(tk.E, tk.W, tk.S))
+        tk.Radiobutton(digi_out_frame, text="Resistor 3", variable=self.resist_var,
+                        value=4, indicatoron=0, command=self.set_digital_out).grid(column=0, row=2, sticky=(tk.E, tk.W, tk.S))
+        tk.Radiobutton(digi_out_frame, text="Resistor 4", variable=self.resist_var,
+                        value=8, indicatoron=0, command=self.set_digital_out).grid(column=1, row=2, sticky=(tk.E, tk.W, tk.S))
 
-        # Set widgets ---------------------------------
-        set_frame = ttk.Labelframe(self.spectroscopy_frame, text='Set:', padding=(0, 5, 0, 15))
-        set_frame.columnconfigure(1, weight=1)
 
-        self.GoTo_button = ttk.Button(master=set_frame, text='GoTo', command=self.goto)
-        self.GoTo_entry = ttk.Entry(master=set_frame, width=10)
-        self.GoTo_entry.insert(0, '700.0')
-        self.integration_time_button = ttk.Button(master=set_frame, text='Integration time (ms)',
-                                                  command=self.update_integration_time)
-        self.integration_time_entry = ttk.Entry(master=set_frame, width=10)
-        self.integration_time_entry.insert(0, '300')
-        self.waiting_time_button = ttk.Button(master=set_frame, text='Waiting time (ms)',
-                                              command=self.update_waiting_time)
-        self.waiting_time_entry = ttk.Entry(master=set_frame, width=10)
-        self.waiting_time_entry.insert(0, '100')
 
-        set_frame.grid(column=0, row=1, sticky=(tk.EW))
-        self.GoTo_button.grid(column=0, row=0, sticky=(tk.EW))
-        self.GoTo_entry.grid(column=1, row=0, sticky=(tk.EW))
-        self.integration_time_button.grid(column=0, row=2, sticky=(tk.EW))
-        self.integration_time_entry.grid(column=1, row=2, sticky=(tk.EW))
-        self.waiting_time_button.grid(column=0, row=3, sticky=(tk.EW))
-        self.waiting_time_entry.grid(column=1, row=3, sticky=(tk.EW))
+        # # Set widgets ---------------------------------
+        # set_frame = ttk.Labelframe(self.spectroscopy_frame, text='Set:', padding=(0, 5, 0, 15))
+        # set_frame.columnconfigure(1, weight=1)
+        #
+        # self.GoTo_button = ttk.Button(master=set_frame, text='GoTo', command=self.goto)
+        # self.GoTo_entry = ttk.Entry(master=set_frame, width=10)
+        # self.GoTo_entry.insert(0, '700.0')
+        # self.integration_time_button = ttk.Button(master=set_frame, text='Integration time (ms)',
+        #                                           command=self.update_integration_time)
+        # self.integration_time_entry = ttk.Entry(master=set_frame, width=10)
+        # self.integration_time_entry.insert(0, '300')
+        # self.waiting_time_button = ttk.Button(master=set_frame, text='Waiting time (ms)',
+        #                                       command=self.update_waiting_time)
+        # self.waiting_time_entry = ttk.Entry(master=set_frame, width=10)
+        # self.waiting_time_entry.insert(0, '100')
+        #
+        # set_frame.grid(column=0, row=1, sticky=(tk.EW))
+        # self.GoTo_button.grid(column=0, row=0, sticky=(tk.EW))
+        # self.GoTo_entry.grid(column=1, row=0, sticky=(tk.EW))
+        # self.integration_time_button.grid(column=0, row=2, sticky=(tk.EW))
+        # self.integration_time_entry.grid(column=1, row=2, sticky=(tk.EW))
+        # self.waiting_time_button.grid(column=0, row=3, sticky=(tk.EW))
+        # self.waiting_time_entry.grid(column=1, row=3, sticky=(tk.EW))
 
-        # Live adquisition widgets
-        live_frame = ttk.Labelframe(self.spectroscopy_frame, text='Live:', padding=(0, 5, 0, 15))
-        live_frame.columnconfigure(1, weight=1)
-        live_frame.columnconfigure(2, weight=1)
-
-        self.window_live_lbl = ttk.Label(master=live_frame, text="Window (points):")
-        self.window_live_entry = ttk.Entry(master=live_frame, width=10)
-        self.window_live_entry.insert(0, '100')
-
-        self.record_live_button = ttk.Button(master=live_frame, text='Record', command=self.record_live)
-        self.pause_live_button = ttk.Button(master=live_frame, text='Pause', state=tk.DISABLED, command=self.pause_live)
-
-        live_frame.grid(column=0, row=2, sticky=(tk.EW))
-        self.window_live_lbl.grid(column=0, row=0, sticky=(tk.EW))
-        self.window_live_entry.grid(column=1, row=0, columnspan=2, sticky=(tk.EW))
-        self.record_live_button.grid(column=1, row=3, sticky=(tk.EW))
-        self.pause_live_button.grid(column=2, row=3, sticky=(tk.EW))
-
-        # Scan widgets ---------------------------------
-        scan_frame = ttk.Labelframe(self.spectroscopy_frame, text='Scan:', padding=(0, 5, 0, 15))
-        scan_frame.columnconfigure(0, weight=1)
-
-        Start_lbl = ttk.Label(master=scan_frame, text="Start (nm):")
-        self.Start_entry = ttk.Entry(master=scan_frame)
-        self.Start_entry.insert(0, '700.0')
-        Stop_lbl = ttk.Label(master=scan_frame, text="Stop (nm):")
-        self.Stop_entry = ttk.Entry(master=scan_frame)
-        self.Stop_entry.insert(0, '900.0')
-        Step_lbl = ttk.Label(master=scan_frame, text="Step (nm):")
-        self.Step_entry = ttk.Entry(master=scan_frame)
-        self.Step_entry.insert(0, '5.0')
-
-        self.scan_button = ttk.Button(master=scan_frame, text='Run', command=self.start_stop_scan, width=7)
-        self.pause_button = ttk.Button(master=scan_frame, text='Pause', state=tk.DISABLED, command=self.pause_scan,
-                                       width=7)
-
-        scan_frame.grid(column=0, row=3, sticky=(tk.EW))
-        Start_lbl.grid(column=0, row=0, sticky=(tk.EW))
-        self.Start_entry.grid(column=1, row=0, columnspan=2, sticky=(tk.EW))
-        Stop_lbl.grid(column=0, row=1, sticky=(tk.EW))
-        self.Stop_entry.grid(column=1, row=1, columnspan=2, sticky=(tk.EW))
-        Step_lbl.grid(column=0, row=2, sticky=(tk.EW))
-        self.Step_entry.grid(column=1, row=2, columnspan=2, sticky=(tk.EW))
-        self.scan_button.grid(column=1, row=3, sticky=(tk.EW))
-        self.pause_button.grid(column=2, row=3, sticky=(tk.EW))
-
-        # Background widgets
-        self.background_frame = ttk.Labelframe(self.spectroscopy_frame, text='Background:', padding=(0, 5, 0, 15))
-        self.background_frame.columnconfigure(0, weight=1)
-        self.background_frame.columnconfigure(1, weight=1)
-        self.background_button = ttk.Button(master=self.background_frame, text='Get', command=self.get_background)
-        self.clear_background_button = ttk.Button(master=self.background_frame, text='Clear',
-                                                  command=self.clear_background)
-
-        self.background_frame.grid(column=0, row=4, sticky=(tk.NSEW))
-        self.background_button.grid(column=0, row=0, sticky=(tk.EW, tk.S))
-        self.clear_background_button.grid(column=1, row=0, sticky=(tk.EW, tk.S))
+        # # Live aquisition widgets
+        # live_frame = ttk.Labelframe(self.spectroscopy_frame, text='Live:', padding=(0, 5, 0, 15))
+        # live_frame.columnconfigure(1, weight=1)
+        # live_frame.columnconfigure(2, weight=1)
+        #
+        # self.window_live_lbl = ttk.Label(master=live_frame, text="Window (points):")
+        # self.window_live_entry = ttk.Entry(master=live_frame, width=10)
+        # self.window_live_entry.insert(0, '100')
+        #
+        # self.record_live_button = ttk.Button(master=live_frame, text='Record', command=self.record_live)
+        # self.pause_live_button = ttk.Button(master=live_frame, text='Pause', state=tk.DISABLED, command=self.pause_live)
+        #
+        # live_frame.grid(column=0, row=2, sticky=(tk.EW))
+        # self.window_live_lbl.grid(column=0, row=0, sticky=(tk.EW))
+        # self.window_live_entry.grid(column=1, row=0, columnspan=2, sticky=(tk.EW))
+        # self.record_live_button.grid(column=1, row=3, sticky=(tk.EW))
+        # self.pause_live_button.grid(column=2, row=3, sticky=(tk.EW))
+        #
+        # # Scan widgets ---------------------------------
+        # scan_frame = ttk.Labelframe(self.spectroscopy_frame, text='Scan:', padding=(0, 5, 0, 15))
+        # scan_frame.columnconfigure(0, weight=1)
+        #
+        # Start_lbl = ttk.Label(master=scan_frame, text="Start (nm):")
+        # self.Start_entry = ttk.Entry(master=scan_frame)
+        # self.Start_entry.insert(0, '700.0')
+        # Stop_lbl = ttk.Label(master=scan_frame, text="Stop (nm):")
+        # self.Stop_entry = ttk.Entry(master=scan_frame)
+        # self.Stop_entry.insert(0, '900.0')
+        # Step_lbl = ttk.Label(master=scan_frame, text="Step (nm):")
+        # self.Step_entry = ttk.Entry(master=scan_frame)
+        # self.Step_entry.insert(0, '5.0')
+        #
+        # self.scan_button = ttk.Button(master=scan_frame, text='Run', command=self.start_stop_scan, width=7)
+        # self.pause_button = ttk.Button(master=scan_frame, text='Pause', state=tk.DISABLED, command=self.pause_scan,
+        #                                width=7)
+        #
+        # scan_frame.grid(column=0, row=3, sticky=(tk.EW))
+        # Start_lbl.grid(column=0, row=0, sticky=(tk.EW))
+        # self.Start_entry.grid(column=1, row=0, columnspan=2, sticky=(tk.EW))
+        # Stop_lbl.grid(column=0, row=1, sticky=(tk.EW))
+        # self.Stop_entry.grid(column=1, row=1, columnspan=2, sticky=(tk.EW))
+        # Step_lbl.grid(column=0, row=2, sticky=(tk.EW))
+        # self.Step_entry.grid(column=1, row=2, columnspan=2, sticky=(tk.EW))
+        # self.scan_button.grid(column=1, row=3, sticky=(tk.EW))
+        # self.pause_button.grid(column=2, row=3, sticky=(tk.EW))
+        #
+        # # Background widgets
+        # self.background_frame = ttk.Labelframe(self.spectroscopy_frame, text='Background:', padding=(0, 5, 0, 15))
+        # self.background_frame.columnconfigure(0, weight=1)
+        # self.background_frame.columnconfigure(1, weight=1)
+        # self.background_button = ttk.Button(master=self.background_frame, text='Get', command=self.get_background)
+        # self.clear_background_button = ttk.Button(master=self.background_frame, text='Clear',
+        #                                           command=self.clear_background)
+        #
+        # self.background_frame.grid(column=0, row=4, sticky=(tk.NSEW))
+        # self.background_button.grid(column=0, row=0, sticky=(tk.EW, tk.S))
+        # self.clear_background_button.grid(column=1, row=0, sticky=(tk.EW, tk.S))
 
     def create_menu_bar(self):
         """ Add elememnts to the master menubar
         """
 
         # Hardware menu
-        self.master.menu_hardware.add_command(label='Monochromator', command=lambda: self.monochromator.interface(self.master))
-        self.master.menu_hardware.entryconfig("Monochromator", state="disabled")
-        self.master.menu_hardware.add_command(label='Adquisition', command=lambda: self.adquisition.interface(self.master))
-        self.master.menu_hardware.entryconfig("Adquisition", state="disabled")
+        self.master.menu_hardware.add_command(label='DAQ', command=lambda: self.daq.interface(self.master))
+        self.master.menu_hardware.entryconfig("DAQ", state="disabled")
+        # self.master.menu_hardware.add_command(label='Aquisition', command=lambda: self.aquisition.interface(self.master))
+        # self.master.menu_hardware.entryconfig("Aquisition", state="disabled")
 
         # Batch menu
         self.master.menu_batch.add_command(label='Disable', command=self.batch.disable)
@@ -208,57 +220,58 @@ class EQE:
         :return:
         """
 
-        self.monochromator_box['values'] = self.dm.get_devices(['Monochromator'])
-        self.monochromator_box.current(0)
-        self.adquisition_box['values'] = self.dm.get_devices(['Lock-In', 'Spectrometer'])
-        self.adquisition_box.current(0)
+        self.daq_box['values'] = self.dm.get_devices(['DAQ'])
+        self.daq_box.current(0)
+        # self.aquisition_box['values'] = self.dm.get_devices(['Lock-In', 'Spectrometer'])
+        # self.aquisition_box.current(0)
 
-        self.select_monochromator()
-        self.select_adquisition()
+        self.select_daq()
+        # self.select_aquisition()
 
-    def select_monochromator(self, *args):
+    def select_daq(self, *args):
 
-        if self.monochromator is not None:
-            self.dm.close_device(self.monochromator)
+        if self.daq is not None:
+            self.dm.close_device(self.daq)
 
-        dev_name = self.mono_var.get()
-        self.monochromator = self.dm.open_device(dev_name)
+        dev_name = self.daq_var.get()
+        print('dev_name', dev_name)
+        self.daq = self.dm.open_device(dev_name)
 
-        if self.monochromator is None:
-            self.monochromator_box.current(0)
-            self.monochromator = self.dm.open_device(self.mono_var.get())
+        if self.daq is None:
+            self.daq_box.current(0)
+            self.daq = self.dm.open_device(self.daq_var.get())
 
-        elif self.dm.current_config[dev_name]['Type'] == 'Monochromator':
-            self.move = self.monochromator.move
+        elif self.dm.current_config[dev_name]['Type'] == 'DAQ':
+            pass
 
         else:
-            self.monochromator_box.current(0)
-            self.monochromator = self.dm.open_device(self.mono_var.get())
+            self.daq_box.current(0)
+            self.daq = self.dm.open_device(self.daq_var.get())
 
         # If the device has an interface to set options, we link it to the entry in the menu
-        interface = getattr(self.monochromator, "interface", None)
+        interface = getattr(self.daq, "interface", None)
         if callable(interface):
-            self.master.menu_hardware.entryconfig("Monochromator", state="normal")
+            self.master.menu_hardware.entryconfig("DAQ", state="normal")
         else:
-            self.master.menu_hardware.entryconfig("Monochromator", state="disabled")
+            self.master.menu_hardware.entryconfig("DAQ", state="disabled")
 
-    def select_adquisition(self, *args):
-        """ When the adquisition selector changes, this function updates some variables and the graphical interface
+    def select_aquisition(self, *args):
+        """ When the aquisition selector changes, this function updates some variables and the graphical interface
         to adapt it to the selected device.
 
         :param args: Dummy variable that does nothing but must exist (?)
         :return: None
         """
 
-        if self.adquisition is not None:
-            self.dm.close_device(self.adquisition)
+        if self.aquisition is not None:
+            self.dm.close_device(self.aquisition)
 
         dev_name = self.adq_var.get()
-        self.adquisition = self.dm.open_device(dev_name)
+        self.aquisition = self.dm.open_device(dev_name)
 
-        if self.adquisition is None:
-            self.adquisition_box.current(0)
-            self.adquisition = self.dm.open_device(self.adq_var.get())
+        if self.aquisition is None:
+            self.aquisition_box.current(0)
+            self.aquisition = self.dm.open_device(self.adq_var.get())
 
         elif self.dm.current_config[dev_name]['Type'] == 'Spectrometer':
             self.move = self.null
@@ -269,13 +282,13 @@ class EQE:
             self.background_frame.grid(column=0, row=4, sticky=(tk.NSEW))
             self.window_live_lbl.grid_forget()
             self.window_live_entry.grid_forget()
-            self.monochromator_box['state'] = 'disabled'
+            self.daq_box['state'] = 'disabled'
             self.Step_entry['state'] = 'disabled'
             self.GoTo_button['state'] = 'disabled'
             self.GoTo_entry['state'] = 'disabled'
 
         elif self.dm.current_config[dev_name]['Type'] in ['Lock-In', 'Multimeter']:
-            self.move = self.monochromator.move
+            self.move = self.daq.move
             self.prepare_scan = self.prepare_scan_lockin
             self.get_next_datapoint = self.mode_lockin
             self.start_live = self.prepare_live_lockin
@@ -283,20 +296,20 @@ class EQE:
             self.background_frame.grid_forget()
             self.window_live_lbl.grid(column=0, row=0, sticky=(tk.EW))
             self.window_live_entry.grid(column=1, row=0, columnspan=2, sticky=(tk.EW))
-            self.monochromator_box['state'] = 'normal'
+            self.daq_box['state'] = 'normal'
             self.Step_entry['state'] = 'normal'
             self.GoTo_button['state'] = 'normal'
             self.GoTo_entry['state'] = 'normal'
 
         else:
-            self.adquisition_box.current(0)
-            self.adquisition = self.dm.open_device(self.adq_var.get())
+            self.aquisition_box.current(0)
+            self.aquisition = self.dm.open_device(self.adq_var.get())
 
-        interface = getattr(self.adquisition, "interface", None)
+        interface = getattr(self.aquisition, "interface", None)
         if callable(interface):
-            self.master.menu_hardware.entryconfig("Adquisition", state="normal")
+            self.master.menu_hardware.entryconfig("Aquisition", state="normal")
         else:
-            self.master.menu_hardware.entryconfig("Adquisition", state="disabled")
+            self.master.menu_hardware.entryconfig("Aquisition", state="disabled")
 
     def null(self, *args, **kwargs):
         """ Empty function that does nothing
@@ -317,7 +330,7 @@ class EQE:
             self.finish_scan()
 
     def pause_scan(self):
-        """ Pauses an scan or resumes the adquisition
+        """ Pauses an scan or resumes the aquisition
 
         :return: None
         """
@@ -344,7 +357,7 @@ class EQE:
         # Get the scan conditions
         self.start_wl = max(float(self.Start_entry.get()), 250)
         self.stop_wl = max(min(float(self.Stop_entry.get()), 3000), self.start_wl + 1)
-        step = min(max(float(self.Step_entry.get()), self.adquisition.min_wavelength), self.stop_wl - self.start_wl)
+        step = min(max(float(self.Step_entry.get()), self.aquisition.min_wavelength), self.stop_wl - self.start_wl)
 
         # # If we are in a batch, we proceed to the next point
         if self.batch.ready:
@@ -370,13 +383,13 @@ class EQE:
         self.mode_lockin()
 
     def mode_lockin(self):
-        """ Gets the next data point in a scan. This function depends on the adquisition device
+        """ Gets the next data point in a scan. This function depends on the aquisition device
 
         :return: None
         """
 
         if not self.stop:
-            data = self.adquisition.measure()
+            data = self.aquisition.measure()
             self.record[self.i, 1] = data[0]
             self.record[self.i, 2] = data[1]
 
@@ -413,15 +426,15 @@ class EQE:
         if self.batch.ready:
             self.batch.batch_proceed()
 
-        # If the integration time is too long, we have to split the adquisition in several steps,
+        # If the integration time is too long, we have to split the aquisition in several steps,
         # otherwise the spectrometer hangs
-        self.num = int(np.ceil(self.integration_time / self.adquisition.max_integration_time))
+        self.num = int(np.ceil(self.integration_time / self.aquisition.max_integration_time))
 
         # Here we select the wavelength range we want to record and re-shape the record array
         # Get the scan conditions
         self.start_wl = max(float(self.Start_entry.get()), 300)
         self.stop_wl = max(min(float(self.Stop_entry.get()), 2000), self.start_wl + 1)
-        wl = self.adquisition.measure()[0]
+        wl = self.aquisition.measure()[0]
         self.idx = np.where((self.start_wl <= wl) & (wl <= self.stop_wl))
         self.size = len(self.idx[0])
 
@@ -445,7 +458,7 @@ class EQE:
         """
 
         if not self.stop:
-            data = self.adquisition.measure()
+            data = self.aquisition.measure()
             intensity = data[1][self.idx] - self.background[self.idx]
             self.record[:, 1] = (intensity + self.i * self.record[:, 1]) / (self.i + 1.)
 
@@ -519,10 +532,10 @@ class EQE:
 
         if meas_bg:
             self.update_integration_time()
-            self.background = self.adquisition.measure()[1]
+            self.background = self.aquisition.measure()[1]
             messagebox.showinfo(message='Background taken!', detail='Press OK to continue.', title='Background taken!')
         else:
-            self.background = self.adquisition.measure()[1]*0.0
+            self.background = self.aquisition.measure()[1]*0.0
 
     def clear_background(self):
         """ Clears the background when using the spectrometer.
@@ -554,7 +567,7 @@ class EQE:
             self.finish_live()
 
     def pause_live(self):
-        """ Pauses a live recording or resumes the adquisition
+        """ Pauses a live recording or resumes the aquisition
         """
         self.stop = not self.stop
 
@@ -566,7 +579,7 @@ class EQE:
         self.live()
 
     def prepare_live_lockin(self):
-        """ Prepares the lock-in live adquisition and prepare some variables
+        """ Prepares the lock-in live aquisition and prepare some variables
         """
         self.goto()
         self.update_integration_time()
@@ -583,28 +596,28 @@ class EQE:
         self.live_lockin()
 
     def live_lockin(self):
-        """ Runs the live lock-in adquisition
+        """ Runs the live lock-in aquisition
         """
         if not self.stop:
             self.live_data[:-1, 1] = self.live_data[1:, 1]
             self.live_data[:-1, 2] = self.live_data[1:, 2]
 
-            self.live_data[-1, 1], self.live_data[-1, 2] = self.adquisition.measure()
+            self.live_data[-1, 1], self.live_data[-1, 2] = self.aquisition.measure()
 
             self.master.update_plot(self.live_data)
 
             self.master.window.after(self.integration_time, self.live_lockin)
 
     def prepare_live_spectrometer(self):
-        """ Prepares the spectrometer live adquisition and prepare some variables
+        """ Prepares the spectrometer live aquisition and prepare some variables
         """
         self.update_integration_time()
 
-        if self.integration_time > self.adquisition.max_integration_time:
-            self.integration_time = int(self.adquisition.max_integration_time)
-            self.adquisition.update_integration_time(self.integration_time)
+        if self.integration_time > self.aquisition.max_integration_time:
+            self.integration_time = int(self.aquisition.max_integration_time)
+            self.aquisition.update_integration_time(self.integration_time)
 
-        data0, data1 = self.adquisition.measure()
+        data0, data1 = self.aquisition.measure()
 
         self.live_data = np.zeros((len(data0), 3))
         self.live_data[:, 0] = data0
@@ -617,10 +630,10 @@ class EQE:
         self.live_spectrometer()
 
     def live_spectrometer(self):
-        """ Runs the live spectrometer adquisition
+        """ Runs the live spectrometer aquisition
         """
         if not self.stop:
-            data0, data1 = self.adquisition.measure()
+            data0, data1 = self.aquisition.measure()
             self.live_data[:, 1] = data1
 
             self.master.update_plot(self.live_data)
@@ -628,7 +641,7 @@ class EQE:
             self.master.window.after(self.integration_time, self.live_spectrometer)
 
     def finish_live(self):
-        """ Finish the live adquisition, returning the front end to the scan mode
+        """ Finish the live aquisition, returning the front end to the scan mode
         """
         self.master.replot_data(xtitle='Wavelength (nm)', ticks='on')
 
@@ -640,7 +653,7 @@ class EQE:
 
         if old_integration_time != self.integration_time:
             self.clear_background()
-            self.integration_time = self.adquisition.update_integration_time(self.integration_time)
+            self.integration_time = self.aquisition.update_integration_time(self.integration_time)
             self.integration_time_entry.delete(0, tk.END)
             self.integration_time_entry.insert(0, '%i' % self.integration_time)
 
@@ -655,3 +668,11 @@ class EQE:
         wl = float(self.GoTo_entry.get())
         self.move(wl, speed='Fast')
         print('Done! Wavelength = {} nm'.format(wl))
+
+    def set_digital_out(self):
+        resist_var = int(self.resist_var.get())
+        self.daq.data_value_entry = self.resist_var
+        print(self.daq)
+        self.daq.data_value_changed()
+
+        print('Digital out set to {}'.format(resist_var))
