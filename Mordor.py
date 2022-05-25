@@ -1,13 +1,14 @@
 ﻿__author__ = 'Diego Alonso-Álvarez'
 __version__= '2.0_beta_5'
 __email__ = 'd.alonso-alvarez@imperial.ac.uk'
-__contributors__ = ['Markus Furher', 'Ture Hinrichsen', 'Jose Videira', 'Tomos Thomas', 'Thomas Wilson', 'Andrew M. Telford', 'Michael P. Nielsen']
+__contributors__ = ['Markus Furher', 'Ture Hinrichsen', 'Jose Videira', 'Tomos Thomas', 'Thomas Wilson', 'Phoebe Pearce', 'Andrew M. Telford', 'Michael P. Nielsen']
 
 import matplotlib
 matplotlib.use('TkAgg')
 
-from matplotlib.backends.backend_tkagg import FigureCanvasTk, NavigationToolbar2Tk
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from matplotlib import gridspec
+from matplotlib.figure import Figure
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -48,7 +49,7 @@ class Mordor(object):
         # Create the main visual elements
         self.make_front_end()
         self.experiment = experiment(self, self.dm)
-        # self.create_plot_area(self.experiment.plot_format)
+        self.create_plot_area(self.experiment.plot_format)
 
         # Main loop of the program
         tools.center(self.window)
@@ -195,7 +196,7 @@ class Mordor(object):
         """
         ratios = plot_format['ratios']
 
-        self.fig = plt.figure(figsize=(9, 8), dpi=72)
+        self.fig = Figure(figsize=(9, 8), dpi=100)
         gs = gridspec.GridSpec(2, 1, height_ratios=[ratios[0], ratios[1]])
         self.Ch1 = self.fig.add_subplot(gs[0], ylabel=plot_format['Ch1_ylabel'], xlabel=plot_format['xlabel'])
         self.Ch2 = self.fig.add_subplot(gs[1], ylabel=plot_format['Ch2_ylabel'], xlabel=plot_format['xlabel'])
@@ -205,6 +206,7 @@ class Mordor(object):
 
         ## Test if optional plot settings are present in the specific experiment
         ## (e.g. these are all present in the CV experiment, but not in IV)
+
         if 'x_scale' in plot_format:
             self.Ch1.set_xscale(plot_format['x_scale'])
             self.Ch2.set_xscale(plot_format['x_scale'])
@@ -213,13 +215,18 @@ class Mordor(object):
         if 'Ch2_scale' in plot_format:
             self.Ch2.set_yscale(plot_format['Ch2_scale'])
 
-        self.canvas = FigureCanvasTk(self.fig, self.plot_frame)
-        self.canvas.get_tk_widget().pack()
+        # root = tk.Tk()
+        # t = np.arange(0, 3, .01)
+        # self.fig.add_subplot(111).plot(t, 2 * np.sin(2 * np.pi * t))
+        self.canvas = FigureCanvasTkAgg(self.fig, self.plot_frame)
+        # self.canvas = FigureCanvasTkAgg(self.fig, root)
         self.canvas.draw()
+        # self.canvas.get_tk_widget().pack()
 
         toolbar = NavigationToolbar2Tk(self.canvas, self.plot_frame)
         toolbar.update()
-        self.canvas._tkcanvas.pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+        self.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
 
     def make_front_end(self):
         """ Creates the visual elements of the main window: plot, toolbar, buttons...

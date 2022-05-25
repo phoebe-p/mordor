@@ -101,7 +101,82 @@ class EQE:
         tk.Radiobutton(digi_out_frame, text="Resistor 4", variable=self.resist_var,
                         value=8, indicatoron=0, command=self.set_digital_out).grid(column=1, row=2, sticky=(tk.E, tk.W, tk.S))
 
+        analog_out_frame = ttk.Labelframe(self.spectroscopy_frame, text='LED control (analog out):', 
+                                     padding=(0, 5, 0, 15))
+        analog_out_frame.columnconfigure(0, weight=1)
+        analog_out_frame.grid(column=0, row=4, sticky=(tk.EW))
 
+        self.LED1_var = tk.StringVar()
+        self.LED1_var.set('0')
+        self.LED1_label = ttk.Label(analog_out_frame, text='LED 1 (V): ')
+        self.LED1_label.grid(column=0, row=0, sticky=(tk.E, tk.W, tk.S))
+        LED1_entry = ttk.Entry(master=analog_out_frame, width=10, textvariable=self.LED1_var)
+        LED1_entry.grid(column=1, row=0, sticky=(tk.E, tk.W, tk.S))
+        LED1_entry.bind('<Return>', self.set_analog_out)
+
+        self.LED2_var = tk.StringVar()
+        self.LED2_var.set('0')
+        self.LED2_label = ttk.Label(analog_out_frame, text='LED 2 (V): ')
+        self.LED2_label.grid(column=0, row=1, sticky=(tk.E, tk.W, tk.S))
+        LED2_entry = ttk.Entry(master=analog_out_frame, width=10, textvariable=self.LED2_var)
+        LED2_entry.grid(column=1, row=1, sticky=(tk.E, tk.W, tk.S))
+        LED2_entry.bind('<Return>', self.set_analog_out)
+
+        self.LED3_var = tk.StringVar()
+        self.LED3_var.set('0')
+        self.LED3_label = ttk.Label(analog_out_frame, text='LED 3 (V): ')
+        self.LED3_label.grid(column=0, row=2, sticky=(tk.E, tk.W, tk.S))
+        LED3_entry = ttk.Entry(master=analog_out_frame, width=10, textvariable=self.LED3_var)
+        LED3_entry.grid(column=1, row=2, sticky=(tk.E, tk.W, tk.S))
+        LED3_entry.bind('<Return>', self.set_analog_out)
+
+        self.LED4_var = tk.StringVar()
+        self.LED4_var.set('0')
+        self.LED4_label = ttk.Label(analog_out_frame, text='LED 4 (V): ')
+        self.LED4_label.grid(column=0, row=3, sticky=(tk.E, tk.W, tk.S))
+        LED4_entry = ttk.Entry(master=analog_out_frame, width=10, textvariable=self.LED4_var)
+        LED4_entry.grid(column=1, row=3, sticky=(tk.E, tk.W, tk.S))
+        LED4_entry.bind('<Return>', self.set_analog_out)
+
+        self.LED5_var = tk.StringVar()
+        self.LED5_var.set('0')
+        self.LED5_label = ttk.Label(analog_out_frame, text='LED 5 (V): ')
+        self.LED5_label.grid(column=0, row=4, sticky=(tk.E, tk.W, tk.S))
+        LED5_entry = ttk.Entry(master=analog_out_frame, width=10, textvariable=self.LED5_var)
+        LED5_entry.grid(column=1, row=4, sticky=(tk.E, tk.W, tk.S))
+        LED5_entry.bind('<Return>', self.set_analog_out)
+
+        self.LED6_var = tk.StringVar()
+        self.LED6_var.set('0')
+        self.LED6_label = ttk.Label(analog_out_frame, text='LED 6 (V): ')
+        self.LED6_label.grid(column=0, row=5, sticky=(tk.E, tk.W, tk.S))
+        LED6_entry = ttk.Entry(master=analog_out_frame, width=10, textvariable=self.LED6_var)
+        LED6_entry.grid(column=1, row=5, sticky=(tk.E, tk.W, tk.S))
+        LED6_entry.bind('<Return>', self.set_analog_out)
+
+    def set_digital_out(self):
+
+        resist_var = int(self.resist_var.get())
+        self.daq.data_value_entry_digital = self.resist_var
+        self.daq.data_value_changed()
+
+        print('Digital out set to {}'.format(resist_var))
+
+    def set_analog_out(self, a):
+
+        # Need to set the channels in DESCENDING order for some reason, otherwise the other channels will have
+        # their voltage set back to 0...
+
+        V_values = [float(self.LED6_var.get()), float(self.LED5_var.get()), float(self.LED4_var.get()),
+                    float(self.LED3_var.get()), float(self.LED2_var.get()), float(self.LED1_var.get())]
+
+        chan_values = np.arange(0, 6)[::-1]
+
+        for i1, V in enumerate(V_values):
+
+            self.daq.data_value_entry_analog = V
+            self.daq.channel_entry = chan_values[i1]
+            self.daq.update_value()                                                            
 
         # # Set widgets ---------------------------------
         # set_frame = ttk.Labelframe(self.spectroscopy_frame, text='Set:', padding=(0, 5, 0, 15))
@@ -668,11 +743,3 @@ class EQE:
         wl = float(self.GoTo_entry.get())
         self.move(wl, speed='Fast')
         print('Done! Wavelength = {} nm'.format(wl))
-
-    def set_digital_out(self):
-        resist_var = int(self.resist_var.get())
-        self.daq.data_value_entry = self.resist_var
-        print(self.daq)
-        self.daq.data_value_changed()
-
-        print('Digital out set to {}'.format(resist_var))

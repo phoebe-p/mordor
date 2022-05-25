@@ -78,7 +78,8 @@ class MCC_DAQ():
     def update_value(self):
         channel = self.get_channel_num()
         ao_range = self.ao_info.supported_ranges[0]
-        data_value = self.get_data_value_analog()
+        data_value = self.data_value_entry_analog
+        print('chan, val:', channel, data_value)
 
         try:
             # Send the value to the device (optional parameter omitted)
@@ -86,16 +87,15 @@ class MCC_DAQ():
         except ULError as e:
             show_ul_error(e)
 
-    def get_data_value_analog(self):
-        try:
-            print(type(self.data_value_entry))
-            return float(self.data_value_entry.get())
-        except ValueError:
-            return 0
+    # def get_data_value_analog(self):
+    #     try:
+    #         return float(self.data_value_entry_analog.get())
+    #     except ValueError:
+    #         return 0
 
     def get_data_value_digital(self):
         try:
-            return int(self.data_value_entry.get())
+            return int(self.data_value_entry_digital.get())
         except ValueError:
             return 0
 
@@ -108,12 +108,11 @@ class MCC_DAQ():
         except ULError as e:
             show_ul_error(e)
 
-
     def get_channel_num(self):
         if self.ao_info.num_chans == 1:
             return 0
         try:
-            return int(self.channel_entry.get())
+            return int(self.channel_entry)
         except ValueError:
             return 0
 
@@ -128,54 +127,6 @@ class MCC_DAQ():
             return False
 
         return True
-
-    # def create_widgets(self):
-    #     '''Create the tkinter UI'''
-    #     self.device_label = tk.Label(self)
-    #     self.device_label.pack(fill=tk.NONE, anchor=tk.NW)
-    #     self.device_label["text"] = ('Board Number ' + str(self.board_num)
-    #                                  + ": " + self.device_info.product_name
-    #                                  + " (" + self.device_info.unique_id + ")")
-    #
-    #     main_frame = tk.Frame(self)
-    #     main_frame.pack(fill=tk.X, anchor=tk.NW)
-    #
-    #     channel_vcmd = self.register(self.validate_channel_entry)
-    #     float_vcmd = self.register(validate_float_entry)
-    #
-    #     curr_row = 0
-    #     if self.ao_info.num_chans > 1:
-    #         channel_entry_label = tk.Label(main_frame)
-    #         channel_entry_label["text"] = "Channel Number:"
-    #         channel_entry_label.grid(row=curr_row, column=0, sticky=tk.W)
-    #
-    #         self.channel_entry = tk.Spinbox(
-    #             main_frame, from_=0, to=max(self.ao_info.num_chans - 1, 0),
-    #             validate='key', validatecommand=(channel_vcmd, '%P'))
-    #         self.channel_entry.grid(row=curr_row, column=1, sticky=tk.W)
-    #         curr_row += 1
-    #
-    #     data_value_label = tk.Label(main_frame)
-    #     data_value_label["text"] = "Value (V):"
-    #     data_value_label.grid(row=curr_row, column=0, sticky=tk.W)
-    #
-    #     self.F = tk.Entry(
-    #         main_frame, validate='key', validatecommand=(float_vcmd, '%P'))
-    #     self.data_value_entry.grid(row=curr_row, column=1, sticky=tk.W)
-    #     self.data_value_entry.insert(0, "0")
-    #
-    #     update_button = tk.Button(main_frame)
-    #     update_button["text"] = "Update"
-    #     update_button["command"] = self.update_value
-    #     update_button.grid(row=curr_row, column=2, padx=3, pady=3)
-    #
-    #     button_frame = tk.Frame(self)
-    #     button_frame.pack(fill=tk.X, side=tk.RIGHT, anchor=tk.SE)
-    #
-    #     quit_button = tk.Button(button_frame)
-    #     quit_button["text"] = "Quit"
-    #     quit_button["command"] = self.master.destroy
-    #     quit_button.grid(row=0, column=0, padx=3, pady=3)
 
     def move(self):
         return 0
